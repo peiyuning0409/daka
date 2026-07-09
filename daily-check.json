@@ -1,8 +1,8 @@
 {
   "2026-07-08": {
     "calligraphy": true,
-    "words": false,
-    "poem": false,
+    "words": true,
+    "poem": true,
     "reading": false,
     "math": false,
     "homework": false,
