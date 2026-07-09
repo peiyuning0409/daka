@@ -20,7 +20,7 @@
   "2026-07-07": {
     "calligraphy": true,
     "words": false,
-    "poem": false,
+    "poem": true,
     "reading": false,
     "math": false,
     "homework": false,
