@@ -21,7 +21,7 @@
     "calligraphy": true,
     "words": false,
     "poem": true,
-    "reading": false,
+    "reading": true,
     "math": false,
     "homework": false,
     "extra": false
