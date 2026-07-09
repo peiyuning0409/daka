@@ -5,7 +5,7 @@
     "poem": true,
     "reading": true,
     "math": true,
-    "homework": false,
+    "homework": true,
     "extra": false
   }
 }
