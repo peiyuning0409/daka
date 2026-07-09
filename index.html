@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>星际打卡 · 云端同步</title>
+    <style>
+        /* ===== 全局 ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body {
+            min-height: 100vh;
+            background: #0b0b1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow: hidden;
+            position: relative;
+        }
+        /* ===== 星空背景 ===== */
+        #starfield {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        /* ===== 主卡片 ===== */
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+            background: rgba(10, 10, 30, 0.55);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-radius: 48px;
+            padding: 28px 22px 22px;
+            border: 1px solid rgba(100, 200, 255, 0.2);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.9), 0 0 60px rgba(0,180,255,0.15);
+            animation: floatGlow 6s ease-in-out infinite alternate;
+        }
+        @keyframes floatGlow {
+            0% { box-shadow: 0 30px 80px rgba(0,0,0,0.9), 0 0 40px rgba(0,180,255,0.1); }
+            100% { box-shadow: 0 30px 80px rgba(0,0,0,0.9), 0 0 80px rgba(100,0,255,0.2); }
+        }
+        /* ===== 头部 ===== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            color: #fff;
+        }
+        .date-nav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.05);
+            padding: 4px 6px 4px 12px;
+            border-radius: 40px;
+            border: 1px solid rgba(255,255,255,0.06);
+            backdrop-filter: blur(4px);
+        }
+        .date-nav button {
+            background: transparent;
+            border: none;
+            color: #99bbdd;
+            font-size: 18px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.2s;
+        }
+        .date-nav button:hover, .date-nav button:active {
+            background: rgba(100,200,255,0.15);
+            color: #fff;
+        }
+        .date-nav .date-text {
+            font-weight: 500;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+            min-width: 100px;
+            text-align: center;
+            color: #ccddff;
+            text-shadow: 0 0 20px rgba(100,200,255,0.2);
+        }
+        .today-btn {
+            background: rgba(0,200,255,0.12) !important;
+            color: #6cf !important;
+            font-size: 13px !important;
+            width: auto !important;
+            padding: 0 14px !important;
+            border-radius: 20px !important;
+            font-weight: 500;
+        }
+        .settings-btn {
+            background: rgba(255,255,255,0.04);
+            border: none;
+            color: #88aacc;
+            font-size: 22px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.04);
+        }
+        .settings-btn:hover {
+            background: rgba(100,200,255,0.12);
+            transform: rotate(90deg) scale(1.05);
+            color: #fff;
+            border-color: rgba(100,200,255,0.2);
+        }
+        /* ===== 任务列表 ===== */
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 16px 0 22px;
+        }
+        .task-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.2,0.9,0.4,1);
+            backdrop-filter: blur(4px);
+            animation: popIn 0.5s ease backwards;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+        .task-item:hover {
+            background: rgba(255,255,255,0.07);
+            border-color: rgba(100,200,255,0.2);
+            transform: scale(1.02);
+        }
+        .task-item:active { transform: scale(0.96); }
+        .task-item:nth-child(1) { animation-delay: 0.05s; }
+        .task-item:nth-child(2) { animation-delay: 0.10s; }
+        .task-item:nth-child(3) { animation-delay: 0.15s; }
+        .task-item:nth-child(4) { animation-delay: 0.20s; }
+        .task-item:nth-child(5) { animation-delay: 0.25s; }
+        .task-item:nth-child(6) { animation-delay: 0.30s; }
+        .task-item:nth-child(7) { animation-delay: 0.35s; }
+        @keyframes popIn {
+            0% { opacity:0; transform: scale(0.7) translateY(30px) rotateX(10deg); }
+            100% { opacity:1; transform: scale(1) translateY(0) rotateX(0); }
+        }
+        .task-name {
+            color: #eef4ff;
+            font-size: 16px;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .task-name .icon { font-size: 20px; opacity: 0.7; }
+        .task-status {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid rgba(255,255,255,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+            background: rgba(255,255,255,0.02);
+            color: transparent;
+        }
+        .task-item.done .task-status {
+            border-color: #6f6;
+            background: rgba(100,255,100,0.12);
+            color: #6f6;
+            box-shadow: 0 0 30px rgba(100,255,100,0.15);
+        }
+        .task-item.done .task-name {
+            color: #b0ffb0;
+            text-decoration: line-through 1px rgba(255,255,255,0.15);
+        }
+        .task-item.done {
+            border-color: rgba(100,255,100,0.12);
+            background: rgba(100,255,100,0.03);
+        }
+        /* ===== 底部 ===== */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #6688aa;
+            font-size: 13px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            padding-top: 16px;
+            margin-top: 4px;
+        }
+        .save-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .save-status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4a6;
+            transition: 0.3s;
+        }
+        .save-status .dot.saving {
+            background: #fa3;
+            animation: pulse 0.8s infinite alternate;
+        }
+        .save-status .dot.error { background: #f55; }
+        @keyframes pulse {
+            from { opacity:0.3; transform:scale(0.8); }
+            to { opacity:1; transform:scale(1.3); }
+        }
+        .sync-btn {
+            background: rgba(100,200,255,0.06);
+            border: 1px solid rgba(100,200,255,0.1);
+            color: #8cf;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .sync-btn:active { transform: scale(0.95); }
+        /* ===== 模态框 ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            padding: 20px;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active { display: flex; }
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        .modal {
+            background: rgba(20,20,40,0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 40px;
+            padding: 32px 28px;
+            max-width: 420px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.9), 0 0 60px rgba(0,150,255,0.05);
+            animation: slideUp 0.4s ease;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(40px) scale(0.95); opacity:0; }
+            to { transform: translateY(0) scale(1); opacity:1; }
+        }
+        .modal h2 {
+            color: #ddeeff;
+            font-weight: 400;
+            font-size: 20px;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 30px rgba(100,200,255,0.1);
+        }
+        .modal label {
+            display: block;
+            color: #99aacc;
+            font-size: 12px;
+            margin-top: 14px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .modal input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: 0.2s;
+        }
+        .modal input:focus {
+            border-color: #6cf;
+            box-shadow: 0 0 30px rgba(100,200,255,0.08);
+        }
+        .modal .actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        .modal .actions button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6cf, #a6f);
+            color: #0a0a1a;
+            box-shadow: 0 0 40px rgba(100,200,255,0.15);
+        }
+        .btn-primary:active { transform: scale(0.96); }
+        .btn-secondary {
+            background: rgba(255,255,255,0.04);
+            color: #aac;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .btn-secondary:active { background: rgba(255,255,255,0.08); }
+        .hint {
+            color: #556688;
+            font-size: 12px;
+            margin-top: 16px;
+            text-align: center;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            padding-top: 16px;
+        }
+        .hint a { color: #6cf; text-decoration: none; }
+        @media (max-width:480px) {
+            .container { padding:20px 14px; border-radius:32px; }
+            .task-item { padding:12px 14px; }
+            .date-nav .date-text { font-size:13px; min-width:80px; }
+            .modal { padding:24px 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 星空背景 -->
+    <canvas id="starfield"></canvas>
+
+    <!-- 主卡片 -->
+    <div class="container">
+        <div class="header">
+            <div class="date-nav">
+                <button id="prevDay">◂</button>
+                <span class="date-text" id="dateDisplay">--</span>
+                <button id="nextDay">▸</button>
+                <button class="today-btn" id="todayBtn">今天</button>
+            </div>
+            <button class="settings-btn" id="settingsBtn">⚙</button>
+        </div>
+
+        <div class="task-list" id="taskList"></div>
+
+        <div class="footer">
+            <div class="save-status">
+                <span class="dot" id="statusDot"></span>
+                <span id="statusText">就绪</span>
+            </div>
+            <button class="sync-btn" id="manualSyncBtn">⟳ 同步</button>
+        </div>
+    </div>
+
+    <!-- 设置模态框 -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal">
+            <h2>🌌 云端配置</h2>
+            <label>GitHub 用户名</label>
+            <input type="text" id="ghUsername" placeholder="你的用户名" />
+            <label>仓库名</label>
+            <input type="text" id="ghRepo" placeholder="仓库名" />
+            <label>分支 (默认 main)</label>
+            <input type="text" id="ghBranch" placeholder="main" value="main" />
+            <label>Personal Access Token (需 repo 权限)</label>
+            <input type="password" id="ghToken" placeholder="ghp_xxxxxxxx" />
+            <div class="actions">
+                <button class="btn-secondary" id="cancelSettings">取消</button>
+                <button class="btn-primary" id="saveSettings">保存 & 连接</button>
+            </div>
+            <div class="hint">
+                <a href="https://github.com/settings/tokens" target="_blank">生成 Token →</a>
+                &nbsp; 勾选 <strong>repo</strong> 和 <strong>workflow</strong>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ================================================================
+        //  1. 星空动画（Canvas）
+        // ================================================================
+        (function initStars() {
+            const canvas = document.getElementById('starfield');
+            const ctx = canvas.getContext('2d');
+            let width, height, stars = [];
+
+            function resize() {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resize);
+            resize();
+
+            function createStars(count) {
+                stars = [];
+                for (let i = 0; i < count; i++) {
+                    stars.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height,
+                        radius: Math.random() * 1.8 + 0.4,
+                        speed: Math.random() * 0.02 + 0.005,
+                        phase: Math.random() * Math.PI * 2,
+                        color: `hsl(${220 + Math.random() * 40}, 80%, ${70 + Math.random() * 30}%)`
+                    });
+                }
+            }
+            createStars(300);
+
+            function drawStars(time) {
+                ctx.clearRect(0, 0, width, height);
+                const grad = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, Math.max(width, height)*0.7);
+                grad.addColorStop(0, '#141430');
+                grad.addColorStop(0.5, '#0a0a1a');
+                grad.addColorStop(1, '#05050a');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, width, height);
+
+                stars.forEach(star => {
+                    const brightness = 0.6 + 0.4 * Math.sin(time * star.speed + star.phase);
+                    ctx.beginPath();
+                    ctx.arc(star.x, star.y, star.radius * brightness, 0, Math.PI * 2);
+                    ctx.fillStyle = star.color;
+                    ctx.globalAlpha = brightness * 0.9;
+                    ctx.fill();
+                    if (star.radius > 1.2) {
+                        ctx.shadowColor = 'rgba(200, 220, 255, 0.3)';
+                        ctx.shadowBlur = 10;
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+                });
+                ctx.globalAlpha = 1;
+
+                // 星云
+                ctx.save();
+                ctx.globalAlpha = 0.04;
+                const grd2 = ctx.createRadialGradient(width*0.2, height*0.3, 0, width*0.2, height*0.3, width*0.6);
+                grd2.addColorStop(0, '#6cf');
+                grd2.addColorStop(1, 'transparent');
+                ctx.fillStyle = grd2;
+                ctx.fillRect(0, 0, width, height);
+                const grd3 = ctx.createRadialGradient(width*0.8, height*0.7, 0, width*0.8, height*0.7, width*0.5);
+                grd3.addColorStop(0, '#a6f');
+                grd3.addColorStop(1, 'transparent');
+                ctx.fillStyle = grd3;
+                ctx.fillRect(0, 0, width, height);
+                ctx.restore();
+
+                requestAnimationFrame(drawStars);
+            }
+            requestAnimationFrame(drawStars);
+        })();
+
+        // ================================================================
+        //  2. 打卡应用核心（带本地存储 fallback）
+        // ================================================================
+        const TASKS = [
+            { id: 'calligraphy', label: '练字两面', icon: '✍️' },
+            { id: 'words', label: '记英语单词', icon: '📖' },
+            { id: 'poem', label: '默写古诗', icon: '📜' },
+            { id: 'reading', label: '英语跟读 15 分钟', icon: '🗣️' },
+            { id: 'math', label: '数学口算一面', icon: '🧮' },
+            { id: 'homework', label: '课外班练习作业', icon: '📚' },
+            { id: 'extra', label: '阅读', icon: '📘' }
+        ];
+
+        // ---------- 配置 ----------
+        const STORAGE_KEY = 'daily_check_config';
+        const LOCAL_DATA_KEY = 'daily_check_local'; // 本地存储键
+        const FILE_PATH = 'daily-check.json';
+
+        let config = { username: '', repo: '', branch: 'main', token: '' };
+        let currentDate = new Date();
+        let allData = {};          // 所有日期的数据 { '2026-07-09': { taskId: true, ... } }
+        let currentDayData = {};   // 当前日期的数据
+        let isSaving = false;
+        let saveTimer = null;
+        let _fileSha = null;
+        let useCloud = false;     // 是否已配置云端
+
+        // DOM 元素
+        const taskListEl = document.getElementById('taskList');
+        const dateDisplay = document.getElementById('dateDisplay');
+        const prevBtn = document.getElementById('prevDay');
+        const nextBtn = document.getElementById('nextDay');
+        const todayBtn = document.getElementById('todayBtn');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const modal = document.getElementById('settingsModal');
+        const cancelBtn = document.getElementById('cancelSettings');
+        const saveSettingsBtn = document.getElementById('saveSettings');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const manualSyncBtn = document.getElementById('manualSyncBtn');
+
+        // ---------- 工具函数 ----------
+        function formatDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        // ---------- 本地存储操作 ----------
+        function loadLocalData() {
+            const saved = localStorage.getItem(LOCAL_DATA_KEY);
+            if (saved) {
+                try { allData = JSON.parse(saved); } catch (e) { allData = {}; }
+            } else {
+                allData = {};
+            }
+        }
+        function saveLocalData() {
+            localStorage.setItem(LOCAL_DATA_KEY, JSON.stringify(allData));
+        }
+
+        // ---------- 配置管理 ----------
+        function loadConfig() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try { config = { ...config, ...JSON.parse(saved) }; } catch (e) {}
+            }
+            document.getElementById('ghUsername').value = config.username || '';
+            document.getElementById('ghRepo').value = config.repo || '';
+            document.getElementById('ghBranch').value = config.branch || 'main';
+            document.getElementById('ghToken').value = config.token || '';
+            // 判断是否已配置云端
+            useCloud = !!(config.username && config.repo && config.token);
+        }
+
+        function saveConfigToLocal() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+            useCloud = !!(config.username && config.repo && config.token);
+        }
+
+        // ---------- GitHub API ----------
+        function getApiUrl(path) {
+            return `https://api.github.com/repos/${config.username}/${config.repo}/contents/${path}`;
+        }
+
+        async function fetchFile() {
+            if (!useCloud) throw new Error('未配置 GitHub');
+            const url = getApiUrl(FILE_PATH);
+            const resp = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${config.token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            if (resp.status === 404) return { content: null, sha: null };
+            if (!resp.ok) {
+                const err = await resp.text();
+                throw new Error(`读取失败 (${resp.status}): ${err}`);
+            }
+            const json = await resp.json();
+            const content = JSON.parse(atob(json.content));
+            return { content, sha: json.sha };
+        }
+
+        async function saveFile(contentObj, sha) {
+            if (!useCloud) throw new Error('未配置 GitHub');
+            const url = getApiUrl(FILE_PATH);
+            const contentBase64 = btoa(JSON.stringify(contentObj, null, 2));
+            const body = {
+                message: `更新打卡 ${formatDate(new Date())}`,
+                content: contentBase64,
+                branch: config.branch
+            };
+            if (sha) body.sha = sha;
+            const resp = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${config.token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(body)
+            });
+            if (!resp.ok) {
+                const err = await resp.text();
+                throw new Error(`保存失败 (${resp.status}): ${err}`);
+            }
+            const json = await resp.json();
+            return json.content.sha;
+        }
+
+        // ---------- 核心数据操作 ----------
+        async function loadAllData() {
+            if (useCloud) {
+                try {
+                    const result = await fetchFile();
+                    if (result.content) {
+                        allData = result.content;
+                    } else {
+                        allData = {};
+                    }
+                    _fileSha = result.sha || null;
+                    // 同时备份到本地
+                    saveLocalData();
+                    return allData;
+                } catch (err) {
+                    console.warn('云端加载失败，使用本地数据', err);
+                    // fallback 到本地
+                    loadLocalData();
+                    return allData;
+                }
+            } else {
+                loadLocalData();
+                return allData;
+            }
+        }
+
+        function getDayData(dateStr) {
+            return allData[dateStr] || {};
+        }
+
+        // 保存当前日期数据到 allData，并上传（如果云端可用）
+        async function saveCurrentDay() {
+            if (isSaving) return;
+            const dateStr = formatDate(currentDate);
+            allData[dateStr] = { ...currentDayData };
+            // 先保存本地
+            saveLocalData();
+
+            // 如果云端可用，则上传
+            if (useCloud) {
+                isSaving = true;
+                setStatus('saving', '云端保存中…');
+                try {
+                    _fileSha = await saveFile(allData, _fileSha);
+                    setStatus('ok', '已同步云端');
+                } catch (err) {
+                    console.error(err);
+                    setStatus('error', '云端保存失败，已存本地');
+                } finally {
+                    isSaving = false;
+                }
+            } else {
+                setStatus('ok', '已保存本地（未连接云端）');
+            }
+        }
+
+        function scheduleSave() {
+            if (saveTimer) clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                saveCurrentDay();
+                saveTimer = null;
+            }, 600);
+        }
+
+        // ---------- 渲染界面 ----------
+        function renderTasks() {
+            const dateStr = formatDate(currentDate);
+            currentDayData = getDayData(dateStr);
+            // 确保所有任务存在
+            TASKS.forEach(task => {
+                if (!(task.id in currentDayData)) currentDayData[task.id] = false;
+            });
+
+            let html = '';
+            TASKS.forEach((task, index) => {
+                const done = currentDayData[task.id] || false;
+                html += `
+                    <div class="task-item ${done ? 'done' : ''}" data-task-id="${task.id}" style="animation-delay: ${0.05 + index * 0.05}s">
+                        <span class="task-name"><span class="icon">${task.icon}</span>${task.label}</span>
+                        <span class="task-status">${done ? '✓' : ''}</span>
+                    </div>
+                `;
+            });
+            taskListEl.innerHTML = html;
+
+            // 绑定点击事件
+            document.querySelectorAll('.task-item').forEach(el => {
+                el.addEventListener('click', function() {
+                    const id = this.dataset.taskId;
+                    const dateStr = formatDate(currentDate);
+                    if (!allData[dateStr]) allData[dateStr] = {};
+                    const val = currentDayData[id] || false;
+                    currentDayData[id] = !val;
+                    allData[dateStr] = { ...currentDayData };
+                    renderTasks(); // 刷新UI
+                    scheduleSave();
+                });
+            });
+
+            // 更新日期显示
+            const dayName = ['日','一','二','三','四','五','六'][currentDate.getDay()];
+            dateDisplay.textContent = `${dateStr} 周${dayName}`;
+        }
+
+        function setStatus(type, msg) {
+            const dot = statusDot;
+            const text = statusText;
+            dot.className = 'dot';
+            if (type === 'saving') { dot.classList.add('saving'); text.textContent = msg || '保存中…'; }
+            else if (type === 'error') { dot.classList.add('error'); text.textContent = msg || '错误'; }
+            else { text.textContent = msg || '已同步'; }
+        }
+
+        // ---------- 日期导航 ----------
+        function goToDate(date) {
+            currentDate = date;
+            const dateStr = formatDate(date);
+            if (!allData[dateStr]) allData[dateStr] = {};
+            renderTasks();
+            if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+        }
+
+        function goToday() { goToDate(new Date()); }
+        function goPrev() { const d = new Date(currentDate); d.setDate(d.getDate() - 1); goToDate(d); }
+        function goNext() { const d = new Date(currentDate); d.setDate(d.getDate() + 1); goToDate(d); }
+
+        // ---------- 初始化 ----------
+        async function initApp() {
+            loadConfig();
+            // 加载数据（优先云端，失败则本地）
+            await loadAllData();
+            // 设置今天
+            goToday();
+            if (useCloud) {
+                setStatus('ok', '已连接云端');
+            } else {
+                setStatus('ok', '本地模式（点击⚙️连接云端）');
+            }
+        }
+
+        // ---------- 设置保存 ----------
+        async function saveSettings() {
+            const username = document.getElementById('ghUsername').value.trim();
+            const repo = document.getElementById('ghRepo').value.trim();
+            const branch = document.getElementById('ghBranch').value.trim() || 'main';
+            const token = document.getElementById('ghToken').value.trim();
+            if (!username || !repo || !token) {
+                alert('请填写完整信息');
+                return;
+            }
+            config.username = username;
+            config.repo = repo;
+            config.branch = branch;
+            config.token = token;
+            saveConfigToLocal();
+            modal.classList.remove('active');
+
+            // 尝试连接云端
+            setStatus('saving', '连接云端…');
+            try {
+                await loadAllData(); // 重新拉取云端数据
+                renderTasks();
+                setStatus('ok', '云端连接成功');
+            } catch (err) {
+                alert('连接失败，请检查信息。\n' + err.message);
+                setStatus('error', '连接失败');
+                // 回退配置
+                useCloud = false;
+                loadConfig(); // 重新读取旧配置
+            }
+        }
+
+        // ---------- 事件绑定 ----------
+        prevBtn.addEventListener('click', goPrev);
+        nextBtn.addEventListener('click', goNext);
+        todayBtn.addEventListener('click', goToday);
+
+        settingsBtn.addEventListener('click', () => {
+            loadConfig(); // 刷新输入框
+            modal.classList.add('active');
+        });
+        cancelBtn.addEventListener('click', () => { modal.classList.remove('active'); });
+        saveSettingsBtn.addEventListener('click', saveSettings);
+
+        manualSyncBtn.addEventListener('click', async () => {
+            if (!useCloud) {
+                alert('请先配置 GitHub');
+                return;
+            }
+            setStatus('saving', '同步中…');
+            try {
+                await loadAllData(); // 拉取最新
+                renderTasks();
+                await saveCurrentDay(); // 上传当前数据
+                setStatus('ok', '同步完成');
+            } catch (err) {
+                setStatus('error', '同步失败: ' + err.message);
+            }
+        });
+
+        // 点击模态框外部关闭（如果已配置）
+        modal.addEventListener('click', function(e) {
+            if (e.target === this && useCloud) {
+                this.classList.remove('active');
+            }
+        });
+
+        // ---------- 启动 ----------
+        initApp();
+
+        // 页面关闭前保存
+        window.addEventListener('beforeunload', function() {
+            if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+            saveCurrentDay();
+        });
+    </script>
+</body>
+</html>
