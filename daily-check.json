@@ -3,8 +3,8 @@
     "calligraphy": true,
     "words": true,
     "poem": true,
-    "reading": false,
-    "math": false,
+    "reading": true,
+    "math": true,
     "homework": false,
     "extra": false
   }
