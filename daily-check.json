@@ -24,6 +24,6 @@
     "reading": true,
     "math": true,
     "homework": true,
-    "extra": false
+    "extra": true
   }
 }
