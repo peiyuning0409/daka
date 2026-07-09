@@ -22,7 +22,7 @@
     "words": false,
     "poem": true,
     "reading": true,
-    "math": false,
+    "math": true,
     "homework": false,
     "extra": false
   }
