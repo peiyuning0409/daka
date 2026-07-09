@@ -14,7 +14,7 @@
     "poem": false,
     "reading": true,
     "math": false,
-    "homework": false,
+    "homework": true,
     "extra": false
   },
   "2026-07-07": {
