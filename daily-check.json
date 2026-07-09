@@ -9,7 +9,7 @@
     "extra": true
   },
   "2026-07-09": {
-    "calligraphy": false,
+    "calligraphy": true,
     "words": false,
     "poem": false,
     "reading": false,
