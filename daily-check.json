@@ -13,7 +13,7 @@
     "words": false,
     "poem": false,
     "reading": true,
-    "math": false,
+    "math": true,
     "homework": true,
     "extra": true
   },
