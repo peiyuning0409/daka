@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>星际打卡 · 云端同步</title>
-    <!-- 引入 xlsx 库 (生成真实 .xlsx) -->
+    <!-- 引入 xlsx 库（用于导出 .xlsx） -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         /* ===== 全局 ===== */
@@ -257,7 +257,7 @@
             white-space: nowrap;
         }
         .footer-actions button:active { transform: scale(0.95); }
-        /* ===== 导出预览模态框 ===== */
+        /* ===== 导出预览模态框（用于导出 .xlsx） ===== */
         .export-modal {
             display: none;
             position: fixed;
@@ -341,6 +341,92 @@
             transition: 0.2s;
         }
         .export-modal .download-btn:active { transform: scale(0.96); }
+
+        /* ===== 下载选择模态框（教程按钮触发） ===== */
+        .choice-modal {
+            display: none;
+            position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            padding: 20px;
+        }
+        .choice-modal.active { display: flex; }
+        .choice-modal .modal-content {
+            background: rgba(20,20,40,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 40px;
+            padding: 32px 28px;
+            max-width: 400px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 40px 100px rgba(0,0,0,0.9);
+            text-align: center;
+            animation: slideUp 0.4s ease;
+        }
+        .choice-modal .modal-content h2 {
+            color: #ddeeff;
+            font-weight: 400;
+            font-size: 22px;
+            margin-bottom: 8px;
+        }
+        .choice-modal .modal-content p {
+            color: #99aacc;
+            font-size: 15px;
+            margin-bottom: 24px;
+        }
+        .choice-modal .button-group {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+        }
+        .choice-modal .button-group button {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 40px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            background: rgba(255,255,255,0.06);
+            color: #aac;
+            border: 1px solid rgba(255,255,255,0.08);
+            flex: 1;
+        }
+        .choice-modal .button-group button:hover {
+            background: rgba(100,200,255,0.12);
+            color: #fff;
+            border-color: rgba(100,200,255,0.2);
+            transform: scale(1.02);
+        }
+        .choice-modal .button-group button:active { transform: scale(0.96); }
+        .choice-modal .button-group .btn-docx {
+            background: linear-gradient(135deg, #6cf, #a6f);
+            color: #0a0a1a;
+            border: none;
+        }
+        .choice-modal .button-group .btn-docx:hover {
+            box-shadow: 0 0 40px rgba(100,200,255,0.2);
+        }
+        .choice-modal .button-group .btn-txt {
+            background: rgba(255,255,255,0.04);
+            color: #aac;
+        }
+        .choice-modal .close-choice {
+            margin-top: 20px;
+            background: none;
+            border: none;
+            color: #556688;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .choice-modal .close-choice:hover { color: #88aacc; }
+
         /* ===== 设置模态框 ===== */
         .modal-overlay {
             display: none;
@@ -447,6 +533,7 @@
             .date-nav .date-text { font-size:13px; min-width:80px; }
             .modal { padding:24px 18px; }
             .export-modal .modal-content { padding: 20px 16px; }
+            .choice-modal .modal-content { padding: 24px 18px; }
             .help-btn, .settings-btn { width: 38px; height: 38px; font-size: 18px; }
         }
     </style>
@@ -466,7 +553,7 @@
                 <button class="today-btn" id="todayBtn">今天</button>
             </div>
             <div class="header-right">
-                <button class="help-btn" id="helpBtn" title="云端连接教程">📘</button>
+                <button class="help-btn" id="helpBtn" title="下载教程文件">📘</button>
                 <button class="settings-btn" id="settingsBtn">⚙</button>
             </div>
         </div>
@@ -485,7 +572,7 @@
         </div>
     </div>
 
-    <!-- 导出预览模态框 -->
+    <!-- 导出预览模态框（用于导出 .xlsx） -->
     <div class="export-modal" id="exportModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -496,6 +583,19 @@
                 <!-- 表格由 js 动态生成 -->
             </div>
             <button class="download-btn" id="downloadXlsxBtn">⬇ 下载 .xlsx 文件</button>
+        </div>
+    </div>
+
+    <!-- 下载选择模态框（教程按钮触发） -->
+    <div class="choice-modal" id="choiceModal">
+        <div class="modal-content">
+            <h2>📥 下载什么格式？</h2>
+            <p>请选择您需要的教程文件格式</p>
+            <div class="button-group">
+                <button class="btn-docx" id="choiceDocx">📄 下载 docx</button>
+                <button class="btn-txt" id="choiceTxt">📃 下载 txt</button>
+            </div>
+            <button class="close-choice" id="closeChoice">取消</button>
         </div>
     </div>
 
@@ -644,6 +744,12 @@
         const closeExport = document.getElementById('closeExport');
         const downloadXlsxBtn = document.getElementById('downloadXlsxBtn');
         const exportTableWrap = document.getElementById('exportTableWrap');
+
+        // 下载选择模态框
+        const choiceModal = document.getElementById('choiceModal');
+        const choiceDocx = document.getElementById('choiceDocx');
+        const choiceTxt = document.getElementById('choiceTxt');
+        const closeChoice = document.getElementById('closeChoice');
 
         // ---------- 工具 ----------
         function formatDate(date) {
@@ -839,7 +945,7 @@
         function goNext() { const d = new Date(currentDate); d.setDate(d.getDate() + 1); goToDate(d); }
 
         // ================================================================
-        //  3. 导出功能（预览 + 下载 .xlsx）
+        //  3. 导出功能（预览 + 下载 .xlsx）– 由“导出数据”按钮触发
         // ================================================================
         function renderExportTable() {
             const taskLabels = TASKS.map(t => t.label);
@@ -873,19 +979,15 @@
             exportModal.classList.remove('active');
         }
 
-        // ---------- 下载 .xlsx ----------
         function downloadXlsx() {
             const dates = Object.keys(allData).sort();
             if (dates.length === 0) {
                 alert('暂无数据可导出');
                 return;
             }
-
-            // 构建二维数组
             const taskLabels = TASKS.map(t => t.label);
             const header = ['日期', ...taskLabels];
             const rows = [header];
-
             dates.forEach(date => {
                 const day = allData[date];
                 const row = [date];
@@ -894,13 +996,9 @@
                 });
                 rows.push(row);
             });
-
-            // 创建工作簿
             const wb = XLSX.utils.book_new();
             const ws = XLSX.utils.aoa_to_sheet(rows);
             XLSX.utils.book_append_sheet(wb, ws, '打卡记录');
-
-            // 生成文件并下载
             const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
             const blob = new Blob([wbout], { type: 'application/octet-stream' });
             const link = document.createElement('a');
@@ -913,7 +1011,24 @@
         }
 
         // ================================================================
-        //  4. 初始化 & 事件绑定
+        //  4. 教程按钮 – 显示下载选择弹窗
+        // ================================================================
+        function openChoiceModal() {
+            choiceModal.classList.add('active');
+        }
+
+        function closeChoiceModal() {
+            choiceModal.classList.remove('active');
+        }
+
+        // 跳转链接
+        function goToLink(url) {
+            window.open(url, '_blank');
+            closeChoiceModal();
+        }
+
+        // ================================================================
+        //  5. 初始化 & 事件绑定
         // ================================================================
         async function initApp() {
             loadConfig();
@@ -955,9 +1070,19 @@
         nextBtn.addEventListener('click', goNext);
         todayBtn.addEventListener('click', goToday);
 
-        // 帮助按钮 – 跳转到教程链接
-        helpBtn.addEventListener('click', function() {
-            window.open('https://wwavj.lanzouw.com/i8y8j3vm9pja', '_blank');
+        // 教程按钮 – 打开选择弹窗
+        helpBtn.addEventListener('click', openChoiceModal);
+
+        // 选择弹窗按钮
+        choiceDocx.addEventListener('click', function() {
+            goToLink('https://wwavj.lanzouw.com/i8y8j3vm9pja');
+        });
+        choiceTxt.addEventListener('click', function() {
+            goToLink('https://wwavj.lanzouw.com/ifcRz3vmqpkd');
+        });
+        closeChoice.addEventListener('click', closeChoiceModal);
+        choiceModal.addEventListener('click', function(e) {
+            if (e.target === this) closeChoiceModal();
         });
 
         settingsBtn.addEventListener('click', () => { loadConfig(); modal.classList.add('active'); });
@@ -977,7 +1102,7 @@
             }
         });
 
-        // 导出按钮
+        // 导出数据按钮
         exportBtn.addEventListener('click', openExportModal);
         closeExport.addEventListener('click', closeExportModal);
         exportModal.addEventListener('click', function(e) {
