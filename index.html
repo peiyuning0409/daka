@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>星际打卡 · 云端同步</title>
-    <script src="https://cdn.jsdelivr.net/npm/docx@8.2.2/build/index.min.js"></script>
+    <!-- 引入 xlsx 库 (生成真实 .xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         /* ===== 全局 ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -494,7 +495,7 @@
             <div class="table-wrap" id="exportTableWrap">
                 <!-- 表格由 js 动态生成 -->
             </div>
-            <button class="download-btn" id="downloadDocxBtn">⬇ 下载 DOCX 文档</button>
+            <button class="download-btn" id="downloadXlsxBtn">⬇ 下载 .xlsx 文件</button>
         </div>
     </div>
 
@@ -641,7 +642,7 @@
         const exportBtn = document.getElementById('exportBtn');
         const exportModal = document.getElementById('exportModal');
         const closeExport = document.getElementById('closeExport');
-        const downloadDocxBtn = document.getElementById('downloadDocxBtn');
+        const downloadXlsxBtn = document.getElementById('downloadXlsxBtn');
         const exportTableWrap = document.getElementById('exportTableWrap');
 
         // ---------- 工具 ----------
@@ -838,7 +839,7 @@
         function goNext() { const d = new Date(currentDate); d.setDate(d.getDate() + 1); goToDate(d); }
 
         // ================================================================
-        //  3. 导出功能（预览 + 下载 DOCX）
+        //  3. 导出功能（预览 + 下载 .xlsx）
         // ================================================================
         function renderExportTable() {
             const taskLabels = TASKS.map(t => t.label);
@@ -872,56 +873,39 @@
             exportModal.classList.remove('active');
         }
 
-        // ---------- 下载 DOCX ----------
-        async function downloadDocx() {
+        // ---------- 下载 .xlsx ----------
+        function downloadXlsx() {
             const dates = Object.keys(allData).sort();
             if (dates.length === 0) {
                 alert('暂无数据可导出');
                 return;
             }
-            const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, HeadingLevel, AlignmentType, WidthType } = docx;
 
+            // 构建二维数组
             const taskLabels = TASKS.map(t => t.label);
-            const headerCells = [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '日期', bold: true })] })] })];
-            taskLabels.forEach(label => {
-                headerCells.push(new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: label, bold: true })] })] }));
-            });
-            const headerRow = new TableRow({ children: headerCells });
+            const header = ['日期', ...taskLabels];
+            const rows = [header];
 
-            const rows = [headerRow];
             dates.forEach(date => {
                 const day = allData[date];
-                const rowCells = [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: date })] })] })];
+                const row = [date];
                 TASKS.forEach(task => {
-                    const val = day[task.id] || false;
-                    rowCells.push(new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: val ? '✓' : '✗' })] })] }));
+                    row.push(day[task.id] ? '✓' : '✗');
                 });
-                rows.push(new TableRow({ children: rowCells }));
+                rows.push(row);
             });
 
-            const table = new Table({
-                rows: rows,
-                width: { size: 100, type: WidthType.PERCENTAGE },
-            });
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws, '打卡记录');
 
-            const doc = new Document({
-                sections: [{
-                    properties: {},
-                    children: [
-                        new Paragraph({
-                            children: [new TextRun({ text: '每日打卡记录', size: 32, bold: true })],
-                            alignment: AlignmentType.CENTER,
-                            spacing: { after: 200 }
-                        }),
-                        table
-                    ]
-                }]
-            });
-
-            const blob = await Packer.toBlob(doc);
+            // 生成文件并下载
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            const blob = new Blob([wbout], { type: 'application/octet-stream' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = `打卡记录_${formatDate(new Date())}.docx`;
+            link.download = `打卡记录_${formatDate(new Date())}.xlsx`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -999,7 +983,7 @@
         exportModal.addEventListener('click', function(e) {
             if (e.target === this) closeExportModal();
         });
-        downloadDocxBtn.addEventListener('click', downloadDocx);
+        downloadXlsxBtn.addEventListener('click', downloadXlsx);
 
         modal.addEventListener('click', function(e) {
             if (e.target === this && useCloud) {
