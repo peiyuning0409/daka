@@ -30,7 +30,7 @@
     "calligraphy": true,
     "words": false,
     "poem": false,
-    "reading": false,
+    "reading": true,
     "math": false,
     "homework": false,
     "extra": false
