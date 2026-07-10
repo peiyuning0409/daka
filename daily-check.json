@@ -33,6 +33,6 @@
     "reading": true,
     "math": false,
     "homework": false,
-    "extra": false
+    "extra": true
   }
 }
