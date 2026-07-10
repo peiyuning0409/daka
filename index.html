@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>星际打卡 · 云端同步</title>
-    <!-- 引入 docx 库 (用于生成真正的 .docx) -->
     <script src="https://cdn.jsdelivr.net/npm/docx@8.2.2/build/index.min.js"></script>
     <style>
         /* ===== 全局 ===== */
@@ -54,6 +53,11 @@
             margin-bottom: 24px;
             color: #fff;
         }
+        .header-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
         .date-nav {
             display: flex;
             align-items: center;
@@ -100,11 +104,11 @@
             border-radius: 20px !important;
             font-weight: 500;
         }
-        .settings-btn {
+        .help-btn, .settings-btn {
             background: rgba(255,255,255,0.04);
             border: none;
             color: #88aacc;
-            font-size: 22px;
+            font-size: 20px;
             width: 44px;
             height: 44px;
             border-radius: 50%;
@@ -115,11 +119,16 @@
             justify-content: center;
             border: 1px solid rgba(255,255,255,0.04);
         }
-        .settings-btn:hover {
+        .help-btn:hover, .settings-btn:hover {
             background: rgba(100,200,255,0.12);
-            transform: rotate(90deg) scale(1.05);
             color: #fff;
             border-color: rgba(100,200,255,0.2);
+        }
+        .settings-btn:hover {
+            transform: rotate(90deg) scale(1.05);
+        }
+        .help-btn:hover {
+            transform: scale(1.1);
         }
         /* ===== 任务列表 ===== */
         .task-list {
@@ -437,6 +446,7 @@
             .date-nav .date-text { font-size:13px; min-width:80px; }
             .modal { padding:24px 18px; }
             .export-modal .modal-content { padding: 20px 16px; }
+            .help-btn, .settings-btn { width: 38px; height: 38px; font-size: 18px; }
         }
     </style>
 </head>
@@ -454,7 +464,10 @@
                 <button id="nextDay">▸</button>
                 <button class="today-btn" id="todayBtn">今天</button>
             </div>
-            <button class="settings-btn" id="settingsBtn">⚙</button>
+            <div class="header-right">
+                <button class="help-btn" id="helpBtn" title="云端连接教程">📘</button>
+                <button class="settings-btn" id="settingsBtn">⚙</button>
+            </div>
         </div>
 
         <div class="task-list" id="taskList"></div>
@@ -618,6 +631,7 @@
         const nextBtn = document.getElementById('nextDay');
         const todayBtn = document.getElementById('todayBtn');
         const settingsBtn = document.getElementById('settingsBtn');
+        const helpBtn = document.getElementById('helpBtn');
         const modal = document.getElementById('settingsModal');
         const cancelBtn = document.getElementById('cancelSettings');
         const saveSettingsBtn = document.getElementById('saveSettings');
@@ -827,7 +841,6 @@
         //  3. 导出功能（预览 + 下载 DOCX）
         // ================================================================
         function renderExportTable() {
-            // 构建表格 HTML
             const taskLabels = TASKS.map(t => t.label);
             const dates = Object.keys(allData).sort();
             if (dates.length === 0) {
@@ -866,19 +879,15 @@
                 alert('暂无数据可导出');
                 return;
             }
-            // 使用 docx 库
             const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, HeadingLevel, AlignmentType, WidthType } = docx;
 
-            // 构建表格行
             const taskLabels = TASKS.map(t => t.label);
-            // 表头行
             const headerCells = [new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: '日期', bold: true })] })] })];
             taskLabels.forEach(label => {
                 headerCells.push(new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: label, bold: true })] })] }));
             });
             const headerRow = new TableRow({ children: headerCells });
 
-            // 数据行
             const rows = [headerRow];
             dates.forEach(date => {
                 const day = allData[date];
@@ -961,6 +970,11 @@
         prevBtn.addEventListener('click', goPrev);
         nextBtn.addEventListener('click', goNext);
         todayBtn.addEventListener('click', goToday);
+
+        // 帮助按钮 – 跳转到教程链接
+        helpBtn.addEventListener('click', function() {
+            window.open('https://wwavj.lanzouw.com/i8y8j3vm9pja', '_blank');
+        });
 
         settingsBtn.addEventListener('click', () => { loadConfig(); modal.classList.add('active'); });
         cancelBtn.addEventListener('click', () => { modal.classList.remove('active'); });
