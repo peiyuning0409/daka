@@ -28,7 +28,7 @@
   },
   "2026-07-10": {
     "calligraphy": true,
-    "words": false,
+    "words": true,
     "poem": false,
     "reading": true,
     "math": true,
