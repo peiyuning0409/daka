@@ -50,7 +50,7 @@
     "poem": false,
     "reading": false,
     "math": true,
-    "homework": false,
+    "homework": true,
     "extra": false
   }
 }
