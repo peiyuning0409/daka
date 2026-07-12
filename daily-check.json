@@ -49,7 +49,7 @@
     "words": false,
     "poem": false,
     "reading": false,
-    "math": false,
+    "math": true,
     "homework": false,
     "extra": false
   }
