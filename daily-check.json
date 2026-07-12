@@ -51,6 +51,6 @@
     "reading": false,
     "math": true,
     "homework": true,
-    "extra": false
+    "extra": true
   }
 }
