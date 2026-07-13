@@ -52,5 +52,14 @@
     "math": true,
     "homework": true,
     "extra": true
+  },
+  "2026-07-13": {
+    "calligraphy": false,
+    "words": false,
+    "poem": true,
+    "reading": false,
+    "math": false,
+    "homework": false,
+    "extra": false
   }
 }
