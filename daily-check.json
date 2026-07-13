@@ -59,7 +59,7 @@
     "poem": false,
     "reading": true,
     "math": true,
-    "homework": false,
+    "homework": true,
     "extra": true
   }
 }
