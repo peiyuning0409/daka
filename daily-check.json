@@ -58,7 +58,7 @@
     "words": false,
     "poem": false,
     "reading": true,
-    "math": false,
+    "math": true,
     "homework": false,
     "extra": true
   }
