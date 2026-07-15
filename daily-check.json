@@ -63,7 +63,7 @@
     "extra": true
   },
   "2026-07-15": {
-    "calligraphy": false,
+    "calligraphy": true,
     "words": false,
     "poem": false,
     "reading": false,
@@ -78,6 +78,6 @@
     "reading": true,
     "math": true,
     "homework": true,
-    "extra": false
+    "extra": true
   }
 }
