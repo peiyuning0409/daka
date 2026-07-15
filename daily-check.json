@@ -76,8 +76,8 @@
     "words": false,
     "poem": false,
     "reading": true,
-    "math": false,
-    "homework": false,
+    "math": true,
+    "homework": true,
     "extra": false
   }
 }
