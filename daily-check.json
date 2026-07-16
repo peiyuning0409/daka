@@ -79,5 +79,14 @@
     "math": true,
     "homework": true,
     "extra": true
+  },
+  "2026-07-16": {
+    "calligraphy": true,
+    "words": false,
+    "poem": false,
+    "reading": false,
+    "math": false,
+    "homework": false,
+    "extra": false
   }
 }
