@@ -87,6 +87,6 @@
     "reading": false,
     "math": false,
     "homework": true,
-    "extra": false
+    "extra": true
   }
 }
